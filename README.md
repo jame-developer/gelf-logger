@@ -96,6 +96,12 @@ func main() {
 
 ## Testing
 
+-  create test certificate files. You can use OpenSSL with the following commands in your `test_data` folder under project root:
+
+```shell
+openssl req -newkey rsa:2048 -nodes -keyout testkey.pem -x509 -days 1 -out testcert.pem
+```
+
 To run tests in the terminal, go to the directory where the project is located and type: `go test ./...`
 
 ## License
