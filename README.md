@@ -100,7 +100,7 @@ To run tests in the terminal, go to the directory where the project is located a
 
 ## License
 
-This project is licensed under the terms of [MIT license](LICENCE.md).
+This project is licensed under the terms of [MIT license](LICENSE).
 
 ## Contact
 
