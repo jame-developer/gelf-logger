@@ -28,7 +28,7 @@ func startMockServer(t *testing.T) net.Listener {
 //	`openssl req -newkey rsa:2048 -nodes -keyout testkey.pem -x509 -days 365 -out testcert.pem`
 func startMockTLSServer(t *testing.T) net.Listener {
 	mockTLSServerPort := "5556"
-	cert, err := tls.LoadX509KeyPair("../test_data/testcert.pem", "../test_data/testkey.pem")
+	cert, err := tls.LoadX509KeyPair("./test_data/testcert.pem", "./test_data/testkey.pem")
 	if err != nil {
 		t.Fatalf("Failed to load keypair for TLS: %v", err)
 	}
