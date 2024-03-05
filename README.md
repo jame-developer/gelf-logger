@@ -1,6 +1,6 @@
 # GO GELF LOGGER
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/jame-developer/gelf-logger.svg)](https://pkg.go.dev/<github.com/yourusername/yourproject>) [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md) [![CodeQL](https://github.com/jame-developer/gelf-logger/actions/workflows/codeql.yml/badge.svg)](https://github.com/jame-developer/gelf-logger/actions/workflows/codeql.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/jame-developer/gelf-logger.svg)](https://pkg.go.dev/<github.com/yourusername/yourproject>) [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md) [![CodeQL](https://github.com/jame-developer/gelf-logger/actions/workflows/codeql.yml/badge.svg)](https://github.com/jame-developer/gelf-logger/actions/workflows/codeql.yml) [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=jame-developer_gelf-logger&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=jame-developer_gelf-logger) 
 
 [![](https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://go.dev/)
 
