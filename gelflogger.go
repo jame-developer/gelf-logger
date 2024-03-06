@@ -7,6 +7,7 @@ import (
 	"github.com/jame-developer/gelf-logger/pkg/zerologger"
 	"net"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -172,7 +173,12 @@ func formatGELFMessage(message string, fields map[string]interface{}, host strin
 	}
 
 	for k, v := range fields {
-		gelfMsg["_"+k] = v
+		if boolVal, ok := v.(bool); ok {
+			gelfMsg["_"+k] = strconv.FormatBool(boolVal)
+		} else {
+			gelfMsg["_"+k] = v
+
+		}
 	}
 
 	msgBytes, err := json.Marshal(gelfMsg)
