@@ -25,8 +25,8 @@ jobs:
       run: go build -v ./...
     - name: created test certs
       run: |
-       mkdir test-data
-       openssl req -newkey rsa:2048 -nodes -keyout test-data/testkey.pem -x509 -days 1 -out test-data/testcert.pem
+       mkdir test_data
+       openssl req -newkey rsa:2048 -nodes -keyout test_data/testkey.pem -x509 -days 1 -out test_data/testcert.pem -subj "/C=US/ST=state/L=location/O=organization/CN=domain.com"
     
     - name: Test      
       run: go test -race -cover -covermode=atomic -coverprofile=coverage.out -json ./... > test-report.json
