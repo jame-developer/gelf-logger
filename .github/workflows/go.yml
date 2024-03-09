@@ -23,8 +23,12 @@ jobs:
 
     - name: Build
       run: go build -v ./...
-
-    - name: Test
+    - name: created test certs
+      run: |
+       mkdir test-data
+       openssl req -newkey rsa:2048 -nodes -keyout test-data/testkey.pem -x509 -days 1 -out test-data/testcert.pem
+    
+    - name: Test      
       run: go test -race -cover -covermode=atomic -coverprofile=coverage.out -json ./... > test-report.json
 
     - name: SonarCloud Scan
