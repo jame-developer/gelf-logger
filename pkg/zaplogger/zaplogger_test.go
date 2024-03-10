@@ -1,18 +1,19 @@
-package zerologger_test
+package zaplogger_test
 
 import (
 	"crypto/tls"
 	"encoding/json"
 	"github.com/jame-developer/gelf-logger/pkg/helper"
-	"github.com/jame-developer/gelf-logger/pkg/zerologger"
+	"github.com/jame-developer/gelf-logger/pkg/zaplogger"
 	"github.com/stretchr/testify/assert"
-	"io"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"os"
 	"testing"
 	"time"
 )
 
-func TestNewZeroLogger(t *testing.T) {
+func TestNewZapLogger(t *testing.T) {
 	// Set up the mock server here
 	mockServer := helper.StartMockServer(t)
 	mockTLSServer := helper.StartMockTLSServer(t)
@@ -20,51 +21,56 @@ func TestNewZeroLogger(t *testing.T) {
 		_ = mockServer.Close()
 		_ = mockTLSServer.Close()
 	})
+	validOtherZapCore := zapcore.NewCore(
+		zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
+		os.Stdout,
+		zap.InfoLevel,
+	)
 
 	testCases := []struct {
-		name               string
-		address            string
-		useTLS             bool
-		OtherZeroLogWriter []io.Writer
-		tlsConfig          *tls.Config
-		wantErr            bool
+		name       string
+		address    string
+		useTLS     bool
+		otherCores []zapcore.Core
+		tlsConfig  *tls.Config
+		wantErr    bool
 	}{
 		{
-			name:               "Valid TCP Address Without TLS",
-			address:            mockServer.Addr().String(),
-			OtherZeroLogWriter: []io.Writer{os.Stderr},
-			useTLS:             false,
-			wantErr:            false,
+			name:       "Valid TCP Address Without TLS",
+			address:    mockServer.Addr().String(),
+			otherCores: []zapcore.Core{validOtherZapCore},
+			useTLS:     false,
+			wantErr:    false,
 		},
 		{
-			name:               "Invalid TCP Address Without TLS",
-			address:            "invalid:address",
-			OtherZeroLogWriter: []io.Writer{os.Stderr},
-			useTLS:             false,
-			wantErr:            true,
+			name:       "Invalid TCP Address Without TLS",
+			address:    "invalid:address",
+			otherCores: []zapcore.Core{validOtherZapCore},
+			useTLS:     false,
+			wantErr:    true,
 		},
 		{
-			name:               "Valid TCP Address With TLS",
-			address:            mockTLSServer.Addr().String(),
-			OtherZeroLogWriter: []io.Writer{os.Stderr},
-			useTLS:             true,
-			tlsConfig:          &tls.Config{InsecureSkipVerify: true},
-			wantErr:            false,
+			name:       "Valid TCP Address With TLS",
+			address:    mockTLSServer.Addr().String(),
+			otherCores: []zapcore.Core{validOtherZapCore},
+			useTLS:     true,
+			tlsConfig:  &tls.Config{InsecureSkipVerify: true},
+			wantErr:    false,
 		},
 		{
-			name:               "Invalid TCP Address With TLS",
-			address:            "invalid:address",
-			OtherZeroLogWriter: []io.Writer{os.Stderr},
-			useTLS:             true,
-			tlsConfig:          &tls.Config{},
-			wantErr:            true,
+			name:       "Invalid TCP Address With TLS",
+			address:    "invalid:address",
+			otherCores: []zapcore.Core{validOtherZapCore},
+			useTLS:     true,
+			tlsConfig:  &tls.Config{},
+			wantErr:    true,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Test NewZapLogger
-			_, err := zerologger.NewZeroLogger(tc.address, tc.useTLS, &tls.Config{}, tc.OtherZeroLogWriter...)
+			_, err := zaplogger.NewZapLogger(tc.address, tc.useTLS, &tls.Config{}, tc.otherCores...)
 			if !tc.wantErr {
 				assert.NoError(t, err)
 			} else {
@@ -74,7 +80,7 @@ func TestNewZeroLogger(t *testing.T) {
 	}
 }
 
-func TestProcessZerologFields(t *testing.T) {
+func TestProcessZapLoggerFields(t *testing.T) {
 	tt := []struct {
 		name       string
 		input      map[string]interface{}
@@ -108,7 +114,7 @@ func TestProcessZerologFields(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			_, _, gotOutput, err := zerologger.ProcessZerologFields(tc.input)
+			_, _, gotOutput, err := zaplogger.ProcessZapLoggerFields(tc.input)
 			if tc.wantErr {
 				assert.Error(t, err)
 			} else {
@@ -120,7 +126,7 @@ func TestProcessZerologFields(t *testing.T) {
 	}
 }
 
-func TestConvertZerologLevelToGraylog(t *testing.T) {
+func TestConvertZapLogLevelToGraylog(t *testing.T) {
 	tests := []struct {
 		name          string
 		level         string
@@ -150,10 +156,8 @@ func TestConvertZerologLevelToGraylog(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actualLevel := zerologger.ConvertZerologLevelToGraylog(tt.level)
-			if actualLevel != tt.expectedLevel {
-				t.Errorf("expected level %v but got %v", tt.expectedLevel, actualLevel)
-			}
+			actualLevel := zaplogger.ConvertZapLogLevelToGraylog(tt.level)
+			assert.Equal(t, tt.expectedLevel, actualLevel)
 		})
 	}
 }

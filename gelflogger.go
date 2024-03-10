@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/jame-developer/gelf-logger/pkg/zerologger"
 	"net"
 	"os"
 	"strconv"
@@ -27,12 +26,13 @@ import (
 // - ensureConnection: Ensures that a connection to the Graylog server is established, reconnecting if necessary.
 // - Log: Sends a log message to the Graylog server.
 type Logger struct {
-	conn      net.Conn
-	connLock  sync.Mutex
-	address   string
-	useTLS    bool
-	tslConfig *tls.Config
-	host      string
+	conn             net.Conn
+	connLock         sync.Mutex
+	address          string
+	useTLS           bool
+	tslConfig        *tls.Config
+	host             string
+	baseLogProcessor func(fields map[string]interface{}) (int, float64, []byte, error)
 }
 
 // NewLogger creates a new Logger.
@@ -59,9 +59,9 @@ type Logger struct {
 //
 // This creates a new Logger that will use TLS when connecting
 // to the specified address.
-func NewLogger(address string, useTSL bool, tslConfig *tls.Config) (*Logger, error) {
+func NewLogger(address string, useTSL bool, tslConfig *tls.Config, baseLogProcessor func(fields map[string]interface{}) (int, float64, []byte, error)) (*Logger, error) {
 	host, _ := os.Hostname()
-	logger := &Logger{address: address, useTLS: useTSL, tslConfig: tslConfig, host: host}
+	logger := &Logger{address: address, useTLS: useTSL, tslConfig: tslConfig, host: host, baseLogProcessor: baseLogProcessor}
 	err := logger.connect()
 	if err != nil {
 		return nil, err
@@ -127,7 +127,19 @@ func (l *Logger) ensureConnection() error {
 
 // Log Ensure the connection is alive before logging
 func (l *Logger) Log(message string, fields map[string]interface{}) error {
-	gelfMessage, err := formatGELFMessage(message, fields, l.host)
+	graylogLevel, glTimeStamp, fullMessage, err := l.baseLogProcessor(fields)
+	if err != nil {
+		return err
+	}
+	gelfMsg := map[string]interface{}{
+		"version":       "1.1",
+		"host":          l.host,
+		"short_message": message,
+		"full_message":  string(fullMessage),
+		"timestamp":     glTimeStamp,
+		"level":         graylogLevel,
+	}
+	gelfMessage, err := formatGELFMessage(gelfMsg, fields)
 	if err != nil {
 		return err
 	}
@@ -136,7 +148,6 @@ func (l *Logger) Log(message string, fields map[string]interface{}) error {
 
 	_, err = l.conn.Write(gelfMessage)
 	if err != nil {
-		//log.Printf("Failed to write to Graylog: %v", err)
 		err := l.connect()
 		if err != nil {
 			return err
@@ -157,20 +168,7 @@ func (l *Logger) Log(message string, fields map[string]interface{}) error {
 // The GELF message is then marshaled into a byte slice.
 // If an error occurs during marshaling, it is logged and returned.
 // Finally, the GELF message byte slice is returned along with any error that occurred.
-func formatGELFMessage(message string, fields map[string]interface{}, host string) ([]byte, error) {
-	graylogLevel, glTimeStamp, fullMessage, err2 := zerologger.ProcessZerologFields(fields)
-	if err2 != nil {
-		return nil, err2
-	}
-
-	gelfMsg := map[string]interface{}{
-		"version":       "1.1",
-		"host":          host,
-		"short_message": message,
-		"full_message":  string(fullMessage),
-		"timestamp":     glTimeStamp,
-		"level":         graylogLevel,
-	}
+func formatGELFMessage(gelfMsg, fields map[string]interface{}) ([]byte, error) {
 
 	for k, v := range fields {
 		if boolVal, ok := v.(bool); ok {
