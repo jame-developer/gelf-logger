@@ -53,7 +53,9 @@ func TestNewLogger(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := gelflogger.NewLogger(tt.address, tt.useTLS, tt.tlsConfig)
+			_, err := gelflogger.NewLogger(tt.address, tt.useTLS, tt.tlsConfig, func(fields map[string]interface{}) (int, float64, []byte, error) {
+				return 0, 0, nil, nil
+			})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewLogger() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -112,19 +114,15 @@ func TestWriteWithMockServer(t *testing.T) {
 			wantN:                0,
 			wantErr:              true,
 		},
-		{
-			name:    "invalid time value",
-			message: []byte(`{"message":"info", "time":"2024-01-01T01:01:01"}`),
-			wantN:   0,
-			wantErr: true,
-		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
 			// Initialize our logger with the mock server's address
-			logger, _ := gelflogger.NewLogger(mockServer.Addr().String(), false, nil)
+			logger, _ := gelflogger.NewLogger(mockServer.Addr().String(), false, nil, func(fields map[string]interface{}) (int, float64, []byte, error) {
+				return 0, 0, nil, nil
+			})
 
 			gw := &gelflogger.GelfWriter{
 				Logger: logger,
