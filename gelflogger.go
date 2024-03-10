@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/jame-developer/gelf-logger/pkg/zerologger"
 	"net"
 	"os"
 	"strconv"
@@ -136,7 +135,6 @@ func (l *Logger) Log(message string, fields map[string]interface{}) error {
 
 	_, err = l.conn.Write(gelfMessage)
 	if err != nil {
-		//log.Printf("Failed to write to Graylog: %v", err)
 		err := l.connect()
 		if err != nil {
 			return err

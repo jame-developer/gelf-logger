@@ -1,48 +1,16 @@
-package gelflogger
+package gelflogger_test
 
 import (
 	"crypto/tls"
-	"net"
+	gelflogger "github.com/jame-developer/gelf-logger"
+	"github.com/jame-developer/gelf-logger/pkg/helper"
 	"testing"
 )
 
-// startMockServer creates a mock TCP server and returns a network listener.
-// The server listens on the specified TCP port on the loopback address, "127.0.0.1".
-// The returned listener should be closed after use to free the associated resources.
-func startMockServer(t *testing.T) net.Listener {
-	mockServerPort := "5555"
-	l, err := net.Listen("tcp", net.JoinHostPort("127.0.0.1", mockServerPort))
-	if err != nil {
-		t.Fatalf("Failed to start mock TCP server: %v", err)
-	}
-	return l
-}
-
-// startMockTLSServer creates a mock TLS TCP server and returns a network listener.
-// It loads the X.509 key pair from the given PEM-encoded files, 'testcert.pem' and 'testkey.pem', for TLS configuration.
-// If the key pair cannot be loaded, the function aborts with a fatal error.
-// The server listens on the specified TCP port on the loopback address, "127.0.0.1".
-// The returned listener should be closed after use to free the associated resources.
-// To create these test certificate files, you can use OpenSSL with the following commands in your `test_data` folder under project root:
-//
-//	`openssl req -newkey rsa:2048 -nodes -keyout testkey.pem -x509 -days 365 -out testcert.pem`
-func startMockTLSServer(t *testing.T) net.Listener {
-	mockTLSServerPort := "5556"
-	cert, err := tls.LoadX509KeyPair("./test_data/testcert.pem", "./test_data/testkey.pem")
-	if err != nil {
-		t.Fatalf("Failed to load keypair for TLS: %v", err)
-	}
-	l, err := tls.Listen("tcp", net.JoinHostPort("127.0.0.1", mockTLSServerPort), &tls.Config{Certificates: []tls.Certificate{cert}})
-	if err != nil {
-		t.Fatalf("Failed to start mock TLS TCP server: %v", err)
-	}
-	return l
-}
-
 func TestNewLogger(t *testing.T) {
 	// Set up the mock server here
-	mockServer := startMockServer(t)
-	mockTLSServer := startMockTLSServer(t)
+	mockServer := helper.StartMockServer(t)
+	mockTLSServer := helper.StartMockTLSServer(t)
 
 	defer t.Cleanup(func() {
 		_ = mockServer.Close()
@@ -85,7 +53,7 @@ func TestNewLogger(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := NewLogger(tt.address, tt.useTLS, tt.tlsConfig)
+			_, err := gelflogger.NewLogger(tt.address, tt.useTLS, tt.tlsConfig)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewLogger() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -95,7 +63,7 @@ func TestNewLogger(t *testing.T) {
 
 func TestWriteWithMockServer(t *testing.T) {
 	// Set up the mock server here
-	mockServer := startMockServer(t)
+	mockServer := helper.StartMockServer(t)
 
 	defer t.Cleanup(func() {
 		_ = mockServer.Close()
@@ -156,9 +124,9 @@ func TestWriteWithMockServer(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			// Initialize our logger with the mock server's address
-			logger, _ := NewLogger(mockServer.Addr().String(), false, nil)
+			logger, _ := gelflogger.NewLogger(mockServer.Addr().String(), false, nil)
 
-			gw := &GelfWriter{
+			gw := &gelflogger.GelfWriter{
 				Logger: logger,
 			}
 			if tt.stopServerBeforeTest {
@@ -166,7 +134,7 @@ func TestWriteWithMockServer(t *testing.T) {
 			}
 			defer func() {
 				if tt.stopServerBeforeTest {
-					mockServer = startMockServer(t)
+					mockServer = helper.StartMockServer(t)
 				}
 			}()
 
