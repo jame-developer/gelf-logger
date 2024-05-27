@@ -3,7 +3,7 @@ module github.com/jame-developer/gelf-logger
 go 1.22.0
 
 require (
-	github.com/rs/zerolog v1.32.0
+	github.com/rs/zerolog v1.33.0
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/zap v1.27.0
 )
